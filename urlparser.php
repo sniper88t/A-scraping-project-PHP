@@ -16,9 +16,9 @@ include 'condb.php';
 				if($itemurl == NULL){
 
 				}else{
-				    $fullurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
-				    echo $fullurl;
-					mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
+				    $midurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
+				    insertfulurl($midurl);
+					//mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
 				}
 			}
             foreach ($xpath->query("//a[@class='prodbox finalbox']/@href") as $href){
@@ -27,10 +27,100 @@ include 'condb.php';
                 if($itemurl == NULL){
 
                 }else{
-                    $fullurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
-                    echo $fullurl;
-                    mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
+                    $midurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
+                    insertfulurl($midurl);
+                    //mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
                 }
             }
 
 		sleep(1);
+
+        function insertfulurl($urlparam) {
+            //connect to MySQL Database
+            $hostname = "localhost";
+            $username = "root";
+            $password = "";
+            $db = "parser";
+
+            // Create connection
+            $conn = new mysqli($hostname, $username, $password);
+
+            // Check connection
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            }
+            else{
+                echo "DB Connected!";
+            }
+            /* select db */
+            mysqli_select_db($conn, $db);
+
+            //Get Product fulurls
+            $url= $urlparam;
+            $html=file_get_contents($url);
+            $dom = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom->loadHTML($html);
+            $xpath = new DOMXPath($dom);
+
+            $nodelist = $xpath->query("//div[@class='pages']/a/@href");
+            $node_counts = $nodelist->length / 2; // count how many nodes returned
+            //echo $node_counts;
+
+            foreach ($xpath->query("//div[@class='pages']/a/@href") as $href){
+                $itemurl = $href->textContent;
+
+                if($itemurl == NULL){
+                    echo "no Item";
+                }else{
+                    //echo "https://www.scotchwhiskyauctions.com/".$itemurl;
+                    $itemurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
+
+                    $htmlnode = file_get_contents($itemurl);
+                    $domnode = new DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $domnode->loadHTML($htmlnode);
+                    $xpath = new DOMXPath($domnode);
+
+                    $listprod = $xpath->query("//a[@class='prodbox']/@href");
+                    $prod_counts = $listprod->length; // count how many nodes returned
+
+                    $listfinal = $xpath->query("//a[@class='prodbox finalbox']/@href");
+                    $final_counts = $listfinal->length; // count how many nodes returned
+
+                    $node_counts = $prod_counts + $final_counts;
+                    echo $node_counts;
+
+                    foreach ($xpath->query("//a[@class='prodbox']/@href") as $href){
+                        $itemurl = $href->textContent;
+
+                        if($itemurl == NULL){
+
+                        }else{
+                            $fullurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
+                            echo $fullurl;
+                            //insertdata($fullurl);
+                            mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
+                        }
+                    }
+
+                    foreach ($xpath->query("//a[@class='prodbox finalbox']/@href") as $href){
+                        $itemurl = $href->textContent;
+
+                        if($itemurl == NULL){
+
+                        }else{
+                            $fullurl = "https://www.scotchwhiskyauctions.com/".$itemurl;
+                            echo $fullurl;
+                            //insertdata($fullurl);
+                            mysqli_query($conn,"INSERT INTO `itemurl` (`id`, `url`, `checked`) VALUES (NULL, '".$fullurl."', '0');");
+                        }
+                    }
+
+
+                }
+            }
+
+
+            sleep(1);
+        }
